@@ -38,7 +38,7 @@ This document summarizes all changes and steps taken to set up the Graphiti MCP 
 - Created `.env` in the `mcp_server/` directory with:
   ```env
   OPENAI_API_KEY=ollama
-  MODEL_NAME=deepseek-r1:32b
+  MODEL_NAME=deepseek-r1:8b
   NEO4J_URI=bolt://neo4j:7687
   NEO4J_USER=neo4j
   NEO4J_PASSWORD=demodemo
@@ -56,7 +56,7 @@ This document summarizes all changes and steps taken to set up the Graphiti MCP 
   ```
 - Pulled the required LLM model into the running container:
   ```bash
-  docker compose exec ollama ollama pull deepseek-r1:32b
+  docker compose exec ollama ollama pull deepseek-r1:8b
   ```
 - After the model is downloaded, started the full stack:
   ```bash

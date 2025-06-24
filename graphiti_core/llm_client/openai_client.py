@@ -17,6 +17,7 @@ limitations under the License.
 import logging
 import typing
 from typing import ClassVar
+import os
 
 import openai
 from openai import AsyncOpenAI
@@ -30,8 +31,9 @@ from .errors import RateLimitError, RefusalError
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = 'gpt-4.1-mini'
-DEFAULT_SMALL_MODEL = 'gpt-4.1-nano'
+DEFAULT_MODEL = os.environ.get('DEFAULT_LLM_MODEL', 'deepseek-r1:8b')
+DEFAULT_SMALL_MODEL = os.environ.get('SMALL_LLM_MODEL', 'deepseek-r1:1.5b')
+DEFAULT_EMBEDDER_MODEL = os.environ.get('EMBEDDER_MODEL_NAME', 'nomic-embed-text')
 
 
 class OpenAIClient(LLMClient):

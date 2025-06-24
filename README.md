@@ -202,8 +202,8 @@ docker logs graphiti-graphiti-mcp-1 --follow
 
 **Requirements for Docker deployment:**
 
-- Docker Desktop with at least 24GB memory allocation (for large models like deepseek-r1:32b)
-- The setup automatically pulls required models: `nomic-embed-text` for embeddings and `deepseek-r1:32b` for LLM inference
+- Docker Desktop with at least 24GB memory allocation (for large models like deepseek-r1:8b)
+- The setup automatically pulls required models: `nomic-embed-text` for embeddings and `deepseek-r1:8b` for LLM inference
 
 **Monitoring your deployment:**
 
@@ -212,6 +212,79 @@ docker logs graphiti-graphiti-mcp-1 --follow
 - View processing logs: `docker logs graphiti-graphiti-mcp-1 | grep -i "episode\|processing"`
 
 This Docker setup provides a complete, self-contained Graphiti deployment that doesn't require OpenAI API keys.
+
+## Monitoring, Troubleshooting, and Verifying Your Deployment
+
+### 1. Check Container Health
+
+- Run `docker ps` to ensure all containers are running (graphiti-mcp, ollama, neo4j, graph, etc).
+- Run `docker stats --no-stream` to check memory and CPU usage. High memory/CPU on Ollama is normal during processing.
+
+### 2. Check Entity Count in Neo4j
+
+- Use the provided script to see how many Entity nodes are present:
+  ```bash
+  bash check_graphiti_status.sh
+  ```
+  - If you see `Total Entity nodes in Neo4j: 0` or a blank, the system may still be processing or something is wrong.
+  - If the number increases, your knowledge graph is being built.
+
+### 3. Inspect Logs for Activity
+
+- View recent MCP server logs:
+  ```bash
+  docker logs graphiti-graphiti-mcp-1 --tail 50
+  ```
+- Look for lines like:
+  - `Processing queued episode ...`
+  - `HTTP Request: POST http://ollama:11434/v1/embeddings ...`
+  - `HTTP Request: POST http://ollama:11434/v1/chat/completions ...`
+- High CPU/memory on Ollama means the LLM is working.
+
+### 4. Check the Queue
+
+- The queue is not always visible, but you can grep logs for 'queue' or 'episode':
+  ```bash
+  docker logs graphiti-graphiti-mcp-1 | grep -i queue | tail -20
+  docker logs graphiti-graphiti-mcp-1 | grep -i episode | tail -20
+  ```
+- If you see `Processing queued episode ...`, the system is working.
+
+### 5. Check for Errors
+
+- Look for errors in the logs:
+  ```bash
+  docker logs graphiti-graphiti-mcp-1 | grep -i "error\|exception\|traceback" | tail -20
+  ```
+- If you see repeated errors, something may be wrong with model inference, Neo4j, or the queue.
+
+### 6. What if No Entities Appear?
+
+- If `check_graphiti_status.sh` shows no entities after 10+ minutes:
+  - The system may be stuck on a large episode or model call.
+  - Check logs for errors or timeouts.
+  - Try restarting the containers or switching to a smaller model.
+
+### 7. Switching to a Smaller Model
+
+- Large models (like `deepseek-r1:8b`) require 24GB+ RAM and are slow to process episodes.
+- To use a smaller model (e.g., `llama3`, `mistral`, or `phi3`):
+  1. Change the `OLLAMA_MODELS` environment variable in your `.env` or Docker Compose file to the desired model name.
+  2. Restart the containers.
+  3. Smaller models:
+     - Use much less RAM (4-8GB)
+     - Are much faster
+     - May be less accurate or nuanced for complex entity extraction
+- **Tradeoff:** Smaller models are ideal for development and quick iteration. Use large models only if you need maximum accuracy and have sufficient hardware.
+
+### 8. General Tips
+
+- Re-run the entity count script every few minutes to monitor progress.
+- If you see high CPU/memory and embedding/LLM requests in logs, the system is working.
+- If you see errors or no progress, check your Docker RAM allocation and model choice.
+
+> **Note:**
+> If you are using large language models with Ollama (such as `deepseek-r1:8b`), you must increase Docker Desktop's memory allocation to at least 24GB (preferably 32GB+) via Docker Desktop settings. Insufficient RAM will cause model loading failures or container crashes. See the Monitoring and Troubleshooting section for more details.
 
 ## REST Service
 

@@ -425,7 +425,7 @@ print(episodes)
 
 - **Check logs**: Look for error messages in `docker logs graphiti-graphiti-mcp-1`
 - **Verify Ollama models**: Ensure required models are pulled (`docker exec -it graphiti-ollama-1 ollama list`)
-- **Check memory allocation**: Large models require sufficient Docker memory (24GB+ for deepseek-r1:32b)
+- **Check memory allocation**: Large models require sufficient Docker memory (24GB+ for deepseek-r1:8b)
 
 #### Neo4j Connection Issues
 

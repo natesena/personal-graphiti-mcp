@@ -16,6 +16,7 @@ limitations under the License.
 
 import logging
 from typing import Any
+import os
 
 import numpy as np
 import openai
@@ -28,7 +29,7 @@ from .client import CrossEncoderClient
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = 'gpt-4.1-nano'
+DEFAULT_MODEL = os.environ.get('DEFAULT_RERANKER_MODEL', 'deepseek-r1:8b')
 
 
 class OpenAIRerankerClient(CrossEncoderClient):

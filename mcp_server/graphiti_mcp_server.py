@@ -38,9 +38,9 @@ from graphiti_core.utils.maintenance.graph_data_operations import clear_data
 load_dotenv()
 
 
-DEFAULT_LLM_MODEL = 'gpt-4.1-mini'
-SMALL_LLM_MODEL = 'gpt-4.1-nano'
-DEFAULT_EMBEDDER_MODEL = 'text-embedding-3-small'
+DEFAULT_LLM_MODEL = os.environ.get('DEFAULT_LLM_MODEL', 'deepseek-r1:8b')
+SMALL_LLM_MODEL = os.environ.get('SMALL_LLM_MODEL', 'deepseek-r1:1.5b')
+DEFAULT_EMBEDDER_MODEL = os.environ.get('EMBEDDER_MODEL_NAME', 'nomic-embed-text')
 
 
 class Requirement(BaseModel):

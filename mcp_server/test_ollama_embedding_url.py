@@ -8,8 +8,8 @@ import asyncio
 load_dotenv()
 
 # Mimic the config logic from MCP server
-DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small'
-DEFAULT_LLM_MODEL = 'gpt-4.1-mini'
+DEFAULT_EMBEDDING_MODEL = os.environ.get('EMBEDDER_MODEL_NAME', 'nomic-embed-text')
+DEFAULT_LLM_MODEL = os.environ.get('DEFAULT_LLM_MODEL', 'deepseek-r1:8b')
 
 model_env = os.environ.get('EMBEDDER_MODEL_NAME', '')
 embedding_model = model_env if model_env.strip() else DEFAULT_EMBEDDING_MODEL

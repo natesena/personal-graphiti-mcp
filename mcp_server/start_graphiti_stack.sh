@@ -3,7 +3,7 @@ set -e
 
 # Models to pull (edit as needed)
 EMBED_MODEL="nomic-embed-text"
-LLM_MODEL="deepseek-r1:32b"
+LLM_MODEL="deepseek-r1:8b"
 
 # Start Ollama container
 echo "[1/3] Starting Ollama container..."
