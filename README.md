@@ -181,6 +181,38 @@ The MCP server can be deployed using Docker with Neo4j, making it easy to integr
 
 For detailed setup instructions and usage examples, see the [MCP server README](./mcp_server/README.md).
 
+### Docker Deployment with Ollama
+
+For a complete local deployment without external API dependencies, you can use the Docker Compose setup that includes Ollama for local LLM inference:
+
+```bash
+# Clone the repository
+git clone https://github.com/natesena/personal-graphiti-mcp.git
+cd personal-graphiti-mcp
+
+# Start all services (Neo4j, Ollama, Graphiti MCP server)
+docker compose up -d
+
+# Check that all containers are running
+docker ps
+
+# Monitor logs to see memory processing
+docker logs graphiti-graphiti-mcp-1 --follow
+```
+
+**Requirements for Docker deployment:**
+
+- Docker Desktop with at least 24GB memory allocation (for large models like deepseek-r1:32b)
+- The setup automatically pulls required models: `nomic-embed-text` for embeddings and `deepseek-r1:32b` for LLM inference
+
+**Monitoring your deployment:**
+
+- Neo4j Browser: http://localhost:7474 (neo4j/demodemo)
+- Check container memory usage: `docker stats --no-stream`
+- View processing logs: `docker logs graphiti-graphiti-mcp-1 | grep -i "episode\|processing"`
+
+This Docker setup provides a complete, self-contained Graphiti deployment that doesn't require OpenAI API keys.
+
 ## REST Service
 
 The `server` directory contains an API service for interacting with the Graphiti API. It is built using FastAPI.

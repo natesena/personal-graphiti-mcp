@@ -332,6 +332,129 @@ The Graphiti MCP Server container uses the SSE MCP transport. Claude Desktop doe
 
 4.  **Restart Claude Desktop** for the changes to take effect.
 
+## Monitoring and Troubleshooting
+
+### Checking Docker Logs
+
+When running Graphiti with Docker Compose, you can monitor the system to see if memories are being processed and check for any issues:
+
+#### View MCP Server Logs
+
+```bash
+# View recent logs
+docker logs graphiti-graphiti-mcp-1 --tail 50
+
+# Follow logs in real-time
+docker logs graphiti-graphiti-mcp-1 --follow
+
+# Check for specific processing messages
+docker logs graphiti-graphiti-mcp-1 | grep -i "processing\|episode\|error"
+```
+
+#### View All Service Logs
+
+```bash
+# View logs from all services
+docker compose logs
+
+# Follow logs from all services
+docker compose logs --follow
+
+# View logs from a specific service
+docker compose logs ollama
+docker compose logs neo4j
+```
+
+#### Check Container Status
+
+```bash
+# See running containers and their resource usage
+docker stats --no-stream
+
+# Check if all containers are running
+docker ps
+```
+
+### Verifying Memory Processing
+
+#### Check if Episodes are Being Added
+
+Look for these log messages indicating successful processing:
+
+```
+INFO - Starting episode queue worker for group_id: default
+INFO - Processing queued episode 'Your Episode Name' for group_id: default
+```
+
+#### Access Neo4j Browser
+
+You can view the knowledge graph directly:
+
+1. Open http://localhost:7474 in your browser
+2. Login with username: `neo4j`, password: `demodemo`
+3. Run queries to see your data:
+
+   ```cypher
+   // See all entities
+   MATCH (n:Entity) RETURN n LIMIT 25
+
+   // See all relationships
+   MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 25
+
+   // Count total nodes and relationships
+   MATCH (n) RETURN count(n) as total_nodes
+   MATCH ()-[r]->() RETURN count(r) as total_relationships
+   ```
+
+#### Test Memory Retrieval
+
+Use the MCP tools to verify your memories are stored:
+
+```bash
+# If running with stdio transport in development
+python -c "
+from mcp_graphiti import get_episodes
+episodes = get_episodes(last_n=5)
+print(episodes)
+"
+```
+
+### Common Issues
+
+#### Memory Not Being Processed
+
+- **Check logs**: Look for error messages in `docker logs graphiti-graphiti-mcp-1`
+- **Verify Ollama models**: Ensure required models are pulled (`docker exec -it graphiti-ollama-1 ollama list`)
+- **Check memory allocation**: Large models require sufficient Docker memory (24GB+ for deepseek-r1:32b)
+
+#### Neo4j Connection Issues
+
+- **Verify Neo4j is running**: `docker ps | grep neo4j`
+- **Check Neo4j logs**: `docker logs graphiti-neo4j-1`
+- **Test connection**: Access http://localhost:7474
+
+#### Model Loading Issues
+
+- **Check Ollama logs**: `docker logs graphiti-ollama-1`
+- **Verify models are available**: `docker exec -it graphiti-ollama-1 ollama list`
+- **Pull missing models**: `docker exec -it graphiti-ollama-1 ollama pull model-name`
+
+### Performance Monitoring
+
+#### Memory Usage
+
+```bash
+# Check Docker container memory usage
+docker stats --no-stream
+
+# Check system memory (macOS)
+vm_stat
+```
+
+#### Processing Speed
+
+Monitor the logs to see how long episodes take to process. Large episodes or complex JSON structures may take longer to process.
+
 ## Requirements
 
 - Python 3.10 or higher
