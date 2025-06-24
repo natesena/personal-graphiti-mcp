@@ -9,4 +9,5 @@ dependencies = [
     "openai>=1.68.2",
     "graphiti-core>=0.11.6",
     "azure-identity>=1.21.0",
+    "python-dotenv>=1.0.1",
 ]

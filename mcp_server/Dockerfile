@@ -14,10 +14,16 @@ ENV MCP_SERVER_HOST="0.0.0.0"
 
 # Copy pyproject.toml and install dependencies
 COPY pyproject.toml .
-RUN uv sync
+COPY README.md .
+COPY graphiti_core ./graphiti_core
+RUN ls -l ./graphiti_core
+RUN pip install poetry
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-root
 
 # Copy application code
-COPY graphiti_mcp_server.py .
+COPY mcp_server/graphiti_mcp_server.py .
+COPY mcp_server/test_ollama_embedding_url.py .
 
 EXPOSE 8000
 
