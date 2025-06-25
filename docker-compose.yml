@@ -43,7 +43,7 @@ services:
   ollama:
     image: ollama/ollama:latest
     ports:
-      - "11434:11434"
+      - "11436:11434"
     volumes:
       - ollama_data:/root/.ollama
     entrypoint: >
@@ -59,6 +59,7 @@ services:
       - SMALL_LLM_MODEL=${SMALL_LLM_MODEL}
       - DEFAULT_LLM_MODEL=${DEFAULT_LLM_MODEL}
       - EMBEDDER_MODEL_NAME=${EMBEDDER_MODEL_NAME}
+      - OLLAMA_OPENAI_COMPAT=1
 
   graphiti-mcp:
     build:

@@ -11,9 +11,8 @@ load_dotenv()
 DEFAULT_EMBEDDING_MODEL = os.environ.get('EMBEDDER_MODEL_NAME', 'nomic-embed-text')
 DEFAULT_LLM_MODEL = os.environ.get('DEFAULT_LLM_MODEL', 'deepseek-r1:8b')
 
-model_env = os.environ.get('EMBEDDER_MODEL_NAME', '')
-embedding_model = model_env if model_env.strip() else DEFAULT_EMBEDDING_MODEL
-llm_model = os.environ.get('MODEL_NAME', DEFAULT_LLM_MODEL)
+embedding_model = DEFAULT_EMBEDDING_MODEL
+llm_model = DEFAULT_LLM_MODEL
 api_key = os.environ.get('OPENAI_API_KEY')
 base_url = os.environ.get('OPENAI_BASE_URL')
 
