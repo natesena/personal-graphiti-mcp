@@ -1165,6 +1165,32 @@ async def get_status() -> StatusResponse:
 # Queue status endpoint removed – it was unnecessary and unused.
 # ----------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------
+# Queue status HTTP endpoint (read-only)
+# ----------------------------------------------------------------------------
+
+async def queue_status_http() -> dict[str, Any]:
+    """Live snapshot of queue sizes and items (per group_id)."""
+    
+    snapshot: dict[str, Any] = {"group_queues": {}}
+    
+    for gid, q in episode_queues.items():
+        snapshot["group_queues"][gid] = {
+            "size": q.qsize(),
+            "worker_active": queue_workers.get(gid, False),
+            "items": list(queue_names.get(gid, []))
+        }
+    
+    return snapshot
+
+# Register FastAPI route directly so it is reachable via plain GET
+try:
+    mcp.app.add_api_route("/queue/status", queue_status_http, methods=["GET"], tags=["queue"])
+except Exception as _e:  # route may be double-registered on reload
+    pass
+
+# ----------------------------------------------------------------------------
+
 
 async def initialize_server() -> MCPConfig:
     """Parse CLI arguments and initialize the Graphiti server configuration."""
