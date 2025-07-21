@@ -10,7 +10,8 @@ import os
 import sys
 from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, TypedDict, cast
+from typing import Any, cast
+from typing_extensions import TypedDict
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from dotenv import load_dotenv
@@ -642,6 +643,9 @@ episode_queues: dict[str, asyncio.Queue] = {}
 # Dictionary to track if a worker is running for each group_id
 queue_workers: dict[str, bool] = {}
 
+# Parallel structure that keeps human-readable episode names per group_id so we can report queue contents
+queue_names: dict[str, list[str]] = {}
+
 
 async def process_episode_queue(group_id: str):
     """Process episodes for a specific group_id sequentially.
@@ -668,6 +672,9 @@ async def process_episode_queue(group_id: str):
             finally:
                 # Mark the task as done regardless of success/failure
                 episode_queues[group_id].task_done()
+                # Remove the processed name from queue_names (FIFO)
+                if queue_names.get(group_id):
+                    queue_names[group_id].pop(0)
     except asyncio.CancelledError:
         logger.info(f'Episode queue worker for group_id {group_id} was cancelled')
     except Exception as e:
@@ -741,6 +748,9 @@ async def add_memory(
         - Entities will be created from appropriate JSON properties
         - Relationships between entities will be established based on the JSON structure
     """
+    # --- DEBUG TRACE ---
+    logger.info("=== add_memory INVOKED – name='%s' group_id=%s ===", name, group_id)
+    # -------------------
     global graphiti_client, episode_queues, queue_workers
 
     if graphiti_client is None:
@@ -800,6 +810,9 @@ async def add_memory(
 
         # Add the episode processing function to the queue
         await episode_queues[group_id_str].put(process_episode)
+
+        # Track the episode name for status endpoint
+        queue_names.setdefault(group_id_str, []).append(name)
 
         # Start a worker for this queue if one isn't already running
         if not queue_workers.get(group_id_str, False):
@@ -1112,6 +1125,15 @@ async def clear_graph() -> SuccessResponse | ErrorResponse:
         return {'error': f'Error clearing graph: {error_msg}'}
 
 
+#
+# ---------------- Registry debug dump ----------------
+# This runs at import-time so we can verify which tools FastMCP actually registered.
+try:
+    tool_names = list(mcp._tool_manager._tools.keys())  # use internal attribute
+    logger.info("TOOLS REGISTERED AT IMPORT: %s", tool_names)
+except Exception as _e:  # noqa: BLE001
+    logger.warning("Could not list tool registry: %s", _e)
+
 @mcp.resource('http://graphiti/status')
 async def get_status() -> StatusResponse:
     """Get the status of the Graphiti MCP server and Neo4j connection."""
@@ -1137,6 +1159,11 @@ async def get_status() -> StatusResponse:
             'status': 'error',
             'message': f'Graphiti MCP server is running but Neo4j connection failed: {error_msg}',
         }
+
+
+# ----------------------------------------------------------------------------
+# Queue status endpoint removed – it was unnecessary and unused.
+# ----------------------------------------------------------------------------
 
 
 async def initialize_server() -> MCPConfig:
