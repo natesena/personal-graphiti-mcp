@@ -91,6 +91,19 @@ services:
       - "8100:8100"
     command: ["uv", "run", "graphiti_mcp_server.py", "--transport", "sse"]
 
+  graphiti-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - graphiti-mcp
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+    restart: unless-stopped
+
 volumes:
   neo4j_data:
   neo4j_logs:

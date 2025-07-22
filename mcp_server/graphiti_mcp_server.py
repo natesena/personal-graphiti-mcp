@@ -1178,11 +1178,49 @@ async def get_status() -> StatusResponse:
 
 from fastapi import FastAPI  # placed near top originally; ensure import exists.
 
+from fastapi.middleware.cors import CORSMiddleware
+
 queue_status_app = FastAPI(title="Graphiti Queue Status", docs_url=None, redoc_url=None)
+
+# Add CORS middleware to allow browser access
+queue_status_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",  # Development UI (typical Next.js dev port)
+        "http://localhost:8080",  # Production UI in Docker
+        "http://127.0.0.1:3000",  # Development UI alternative
+        "http://127.0.0.1:8080",  # Production UI alternative
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+
+
+@queue_status_app.options("/queue/status")
+async def queue_status_options():
+    """Handle CORS preflight requests."""
+    from fastapi.responses import Response
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
+@queue_status_app.get("/test")
+async def test_endpoint() -> dict[str, Any]:
+    """Test endpoint to check if CORS is working."""
+    return {"message": "CORS test"}
 
 @queue_status_app.get("/queue/status")
 async def queue_status_endpoint() -> dict[str, Any]:
     """Return live snapshot of queue lengths & worker status for each group_id."""
+    
+    print("Queue status endpoint called")  # Debug log
 
     snapshot: dict[str, Any] = {"group_queues": {}}
 
@@ -1193,7 +1231,20 @@ async def queue_status_endpoint() -> dict[str, Any]:
             "items": list(queue_names.get(gid, [])),
         }
 
-    return snapshot
+    print(f"Returning snapshot: {snapshot}")  # Debug log
+
+    from fastapi.responses import Response
+    import json
+    response = Response(
+        content=json.dumps(snapshot),
+        media_type="application/json",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+    return response
 
 
 # Start the queue status server in a background thread so it shares memory with the MCP server
@@ -1272,7 +1323,7 @@ async def initialize_server() -> MCPConfig:
 
     # Register FastAPI route directly so it is reachable via plain GET
     try:
-        mcp.app.add_api_route("/queue/status", queue_status_http, methods=["GET"], tags=["queue"])
+        mcp.app.add_api_route("/queue/status", queue_status_endpoint, methods=["GET"], tags=["queue"])
         mcp.app.add_api_route("/test", lambda: {"message": "test endpoint works"}, methods=["GET"])
     except Exception as _e:  # route may be double-registered on reload
         pass
@@ -1288,7 +1339,7 @@ async def initialize_server() -> MCPConfig:
 @mcp.resource('http://graphiti/queue/status')
 async def get_queue_status() -> dict[str, Any]:
     """Get the current status of all episode queues."""
-    return await queue_status_http()
+    return await queue_status_endpoint()
 
 
 async def run_mcp_server():

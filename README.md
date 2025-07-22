@@ -419,6 +419,7 @@ Graphiti is under active development. We aim to maintain API stability while wor
 - [x] Enhancing retrieval capabilities with more robust and configurable options
 - [x] Graphiti MCP Server
 - [ ] Expanding test coverage to ensure reliability and catch edge cases
+- [ ] Implement Postgres-backed durable episode queue with retry, auditing, and manual requeue capabilities
 
 ## Contributing
 
