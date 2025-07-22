@@ -69,6 +69,9 @@ export default function Dashboard() {
           <p className="mt-2 text-sm text-gray-600">
             Monitor queue status, processing progress, and system health
           </p>
+          <p className="mt-1 text-xs text-green-600 font-mono">
+            🚀 Development Mode - Hot Reload Active ({new Date().toLocaleTimeString()})
+          </p>
         </div>
 
         {/* Status Cards */}
@@ -213,7 +216,7 @@ export default function Dashboard() {
         </div>
 
         {/* Refresh Button */}
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex justify-center space-x-4">
           <button
             onClick={fetchQueueStatus}
             disabled={loading}
@@ -223,6 +226,25 @@ export default function Dashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             {loading ? 'Refreshing...' : 'Refresh Status'}
+          </button>
+          
+          <button
+            onClick={() => {
+              console.log('Test button clicked - simulating activity');
+              // This simulates activity for testing
+              setQueueStatus({
+                group_queues: {
+                  "test-group": {
+                    size: 2,
+                    worker_active: true,
+                    items: ["test-episode-1.txt", "test-episode-2.txt"]
+                  }
+                }
+              });
+            }}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            🧪 Test Activity
           </button>
         </div>
       </div>
