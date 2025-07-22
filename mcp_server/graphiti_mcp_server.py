@@ -515,12 +515,19 @@ class MCPConfig(BaseModel):
 
 
 # Configure logging
+log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
+
+# Enable DEBUG logging for Graphiti core modules to get detailed processing information
+logging.getLogger('graphiti_core').setLevel(logging.DEBUG)
+logging.getLogger('graphiti_core.nodes').setLevel(logging.DEBUG)
+logging.getLogger('graphiti_core.edges').setLevel(logging.DEBUG)
+logging.getLogger('graphiti_core.utils').setLevel(logging.DEBUG)
 
 # Create global config instance - will be properly initialized later
 config = GraphitiConfig()
@@ -673,7 +680,7 @@ async def process_episode_queue(group_id: str):
                 # Mark the task as done regardless of success/failure
                 episode_queues[group_id].task_done()
                 # Remove the processed name from queue_names (FIFO)
-                if queue_names.get(group_id):
+                if queue_names.get(group_id) and len(queue_names[group_id]) > 0:
                     queue_names[group_id].pop(0)
     except asyncio.CancelledError:
         logger.info(f'Episode queue worker for group_id {group_id} was cancelled')
@@ -1169,27 +1176,31 @@ async def get_status() -> StatusResponse:
 # Queue status HTTP endpoint (read-only)
 # ----------------------------------------------------------------------------
 
-async def queue_status_http() -> dict[str, Any]:
-    """Live snapshot of queue sizes and items (per group_id)."""
-    
+from fastapi import FastAPI  # placed near top originally; ensure import exists.
+
+queue_status_app = FastAPI(title="Graphiti Queue Status", docs_url=None, redoc_url=None)
+
+@queue_status_app.get("/queue/status")
+async def queue_status_endpoint() -> dict[str, Any]:
+    """Return live snapshot of queue lengths & worker status for each group_id."""
+
     snapshot: dict[str, Any] = {"group_queues": {}}
-    
+
     for gid, q in episode_queues.items():
         snapshot["group_queues"][gid] = {
             "size": q.qsize(),
             "worker_active": queue_workers.get(gid, False),
-            "items": list(queue_names.get(gid, []))
+            "items": list(queue_names.get(gid, [])),
         }
-    
+
     return snapshot
 
-# Register FastAPI route directly so it is reachable via plain GET
-try:
-    mcp.app.add_api_route("/queue/status", queue_status_http, methods=["GET"], tags=["queue"])
-except Exception as _e:  # route may be double-registered on reload
-    pass
 
-# ----------------------------------------------------------------------------
+# Start the queue status server in a background thread so it shares memory with the MCP server
+
+def _start_queue_status_server() -> None:  # noqa: D401 – simple helper
+    import uvicorn  # Local import to avoid overhead when not needed
+    uvicorn.run(queue_status_app, host="0.0.0.0", port=8100, log_level="info")
 
 
 async def initialize_server() -> MCPConfig:
@@ -1259,8 +1270,25 @@ async def initialize_server() -> MCPConfig:
         # Set MCP server host from CLI or env
         mcp.settings.host = args.host
 
+    # Register FastAPI route directly so it is reachable via plain GET
+    try:
+        mcp.app.add_api_route("/queue/status", queue_status_http, methods=["GET"], tags=["queue"])
+        mcp.app.add_api_route("/test", lambda: {"message": "test endpoint works"}, methods=["GET"])
+    except Exception as _e:  # route may be double-registered on reload
+        pass
+
+    # After initializing Graphiti and before returning config, spawn the status server
+    import threading  # move import inside function
+    threading.Thread(target=_start_queue_status_server, daemon=True).start()
+
     # Return MCP configuration
     return MCPConfig.from_cli(args)
+
+
+@mcp.resource('http://graphiti/queue/status')
+async def get_queue_status() -> dict[str, Any]:
+    """Get the current status of all episode queues."""
+    return await queue_status_http()
 
 
 async def run_mcp_server():

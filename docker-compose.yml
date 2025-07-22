@@ -85,8 +85,10 @@ services:
       - SMALL_LLM_MODEL=${SMALL_LLM_MODEL}
       - PATH=/root/.local/bin:${PATH}
       - USE_CUSTOM_ENTITIES=true
+      - LOG_LEVEL=DEBUG
     ports:
       - "8000:8000"
+      - "8100:8100"
     command: ["uv", "run", "graphiti_mcp_server.py", "--transport", "sse"]
 
 volumes:

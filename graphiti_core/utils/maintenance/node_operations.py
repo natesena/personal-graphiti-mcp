@@ -302,8 +302,14 @@ async def resolve_extracted_nodes(
         resolution_id: int = resolution.get('id', -1)
         duplicate_idx: int = resolution.get('duplicate_idx', -1)
 
+        # Validate resolution_id bounds
+        if resolution_id < 0 or resolution_id >= len(extracted_nodes):
+            logger.warning(f"Invalid resolution_id {resolution_id} for extracted_nodes of length {len(extracted_nodes)}")
+            continue
+
         extracted_node = extracted_nodes[resolution_id]
 
+        # Safe access to existing_nodes with proper bounds checking
         resolved_node = (
             existing_nodes[duplicate_idx]
             if 0 <= duplicate_idx < len(existing_nodes)
@@ -317,11 +323,16 @@ async def resolve_extracted_nodes(
 
         additional_duplicates: list[int] = resolution.get('additional_duplicates', [])
         for idx in additional_duplicates:
-            existing_node = existing_nodes[idx] if idx < len(existing_nodes) else resolved_node
+            # Safe access to existing_nodes with bounds checking
+            if idx < 0 or idx >= len(existing_nodes):
+                logger.warning(f"Invalid additional_duplicate idx {idx} for existing_nodes of length {len(existing_nodes)}")
+                continue
+                
+            existing_node = existing_nodes[idx]
             if existing_node == resolved_node:
                 continue
 
-            node_duplicates.append((resolved_node, existing_nodes[idx]))
+            node_duplicates.append((resolved_node, existing_node))
 
     logger.debug(f'Resolved nodes: {[(n.name, n.uuid) for n in resolved_nodes]}')
 
