@@ -16,17 +16,23 @@ limitations under the License.
 
 import json
 import logging
-from typing import Any
+import typing
+import os
 
+import openai
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AsyncAzureOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel
 
 from ..prompts.models import Message
-from .client import LLMClient
-from .config import LLMConfig, ModelSize
+from .client import MULTILINGUAL_EXTRACTION_RESPONSES, LLMClient
+from .config import DEFAULT_MAX_TOKENS, LLMConfig, ModelSize
+from .errors import RateLimitError, RefusalError
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_TIMEOUT = int(os.environ.get('OPENAI_TIMEOUT', '1800'))  # 30 minutes default
 
 
 class AzureOpenAILLMClient(LLMClient):
@@ -63,6 +69,7 @@ class AzureOpenAILLMClient(LLMClient):
                 temperature=float(self.temperature) if self.temperature is not None else 0.7,
                 max_tokens=max_tokens,
                 response_format={'type': 'json_object'},
+                timeout=DEFAULT_TIMEOUT,
             )
             result = response.choices[0].message.content or '{}'
 

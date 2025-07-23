@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = os.environ.get('DEFAULT_LLM_MODEL', 'deepseek-r1:8b')
 DEFAULT_SMALL_MODEL = os.environ.get('SMALL_LLM_MODEL', 'deepseek-r1:1.5b')
+DEFAULT_TIMEOUT = int(os.environ.get('OPENAI_TIMEOUT', '1800'))  # 30 minutes default
 DEFAULT_EMBEDDER_MODEL = os.environ.get('EMBEDDER_MODEL_NAME', 'nomic-embed-text')
 
 
@@ -118,6 +119,7 @@ class OpenAIClient(LLMClient):
                 temperature=self.temperature,
                 max_tokens=max_tokens or self.max_tokens,
                 response_format=response_model,  # type: ignore
+                timeout=DEFAULT_TIMEOUT,
             )
 
             response_object = response.choices[0].message

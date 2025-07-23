@@ -17,6 +17,7 @@ limitations under the License.
 import json
 import logging
 import typing
+import os
 
 import groq
 from groq import AsyncGroq
@@ -32,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = 'llama-3.1-70b-versatile'
 DEFAULT_MAX_TOKENS = 2048
+DEFAULT_TIMEOUT = int(os.environ.get('OPENAI_TIMEOUT', '1800'))  # 30 minutes default
 
 
 class GroqClient(LLMClient):
@@ -64,6 +66,7 @@ class GroqClient(LLMClient):
                 temperature=self.temperature,
                 max_tokens=max_tokens or self.max_tokens,
                 response_format={'type': 'json_object'},
+                timeout=DEFAULT_TIMEOUT,
             )
             result = response.choices[0].message.content or ''
             return json.loads(result)

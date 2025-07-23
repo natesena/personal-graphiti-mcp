@@ -33,6 +33,8 @@ from .errors import RateLimitError, RefusalError
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = os.environ.get('DEFAULT_LLM_MODEL', 'deepseek-r1:8b')
+DEFAULT_SMALL_MODEL = os.environ.get('SMALL_LLM_MODEL', 'deepseek-r1:1.5b')
+DEFAULT_TIMEOUT = int(os.environ.get('OPENAI_TIMEOUT', '1800'))  # 30 minutes default
 DEFAULT_EMBEDDER_MODEL = os.environ.get('EMBEDDER_MODEL_NAME', 'nomic-embed-text')
 
 
@@ -101,12 +103,14 @@ class OpenAIGenericClient(LLMClient):
             elif m.role == 'system':
                 openai_messages.append({'role': 'system', 'content': m.content})
         try:
+            # Edit TIMEOUT HERE
             response = await self.client.chat.completions.create(
                 model=self.model or DEFAULT_MODEL,
                 messages=openai_messages,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
                 response_format={'type': 'json_object'},
+                timeout=DEFAULT_TIMEOUT
             )
             result = response.choices[0].message.content or ''
             return json.loads(result)
